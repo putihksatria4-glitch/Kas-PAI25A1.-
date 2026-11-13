@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kas PAI 25A1 — Sistem Manajemen & Transparansi Kas Kelas</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 900: '#312e81' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0.5rem); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-brand-500 selection:text-white min-h-screen flex flex-col pb-24">
+
+    <!-- Toast Notification -->
+    <div id="toast-container" class="fixed top-4 right-4 left-4 sm:left-auto z-50 flex flex-col gap-2 max-w-sm sm:w-full pointer-events-none mx-auto sm:mx-0"></div>
+
+    <!-- Top Header -->
+    <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600 to-indigo-700 text-white flex items-center justify-center shadow-md shadow-brand-600/20 shrink-0">
+                    <i data-lucide="wallet" class="w-5 h-5"></i>
+                </div>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-extrabold text-base sm:text-lg text-slate-900 tracking-tight truncate">Kas <span class="text-brand-600">PAI 25A1</span></h1>
+                        <span id="role-badge" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">Mahasiswa</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 font-medium truncate">Iuran Tetap Rp 5.000 / Bulan</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+                <button onclick="quickToggleBendaharaPrompt()" id="btn-quick-bendahara" class="text-[11px] font-bold px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1.5 border border-slate-200">
+                    <i data-lucide="key" class="w-3.5 h-3.5 text-amber-600"></i> <span id="quick-bendahara-text">Mode Bendahara</span>
+                </button>
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Penyimpanan Lokal Aktif</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 py-5 sm:py-6 w-full flex-1">
+
+        <!-- TAB 1: INFO KAS -->
+        <section id="view-info" class="space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                <div class="md:col-span-7 bg-gradient-to-br from-brand-600 via-brand-700 to-indigo-900 rounded-2xl p-5 sm:p-6 text-white shadow-lg shadow-brand-600/20 relative overflow-hidden flex flex-col justify-between">
+                    <div class="absolute -right-4 -bottom-4 opacity-10 pointer-events-none"><i data-lucide="landmark" class="w-36 h-36"></i></div>
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <p class="text-brand-100 text-xs font-medium uppercase tracking-wider">Total Saldo Kas Kelas</p>
+                            <h2 id="stat-saldo" class="text-3xl sm:text-4xl font-extrabold tracking-tight mt-1">Rp 0</h2>
+                        </div>
+                        <span class="bg-white/15 backdrop-blur-sm text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-white/10">Transparan</span>
+                    </div>
+                    <div class="mt-5 pt-4 border-t border-white/15 grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <p class="text-brand-200 text-[11px]">Terkumpul Periode Ini</p>
+                            <p id="stat-bulan-ini" class="font-bold text-sm sm:text-base mt-0.5">Rp 0</p>
+                        </div>
+                        <div>
+                            <p class="text-brand-200 text-[11px]">Progress Lunas</p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <div class="flex-1 bg-white/20 rounded-full h-2 overflow-hidden">
+                                    <div id="stat-progress-bar" class="bg-emerald-400 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                                <span id="stat-persen" class="font-bold text-xs">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="md:col-span-5 bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm flex flex-col justify-between gap-4">
+                    <div>
+                        <label for="select-bulan" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Periode Bulan Kas</label>
+                        <select id="select-bulan" onchange="handleMonthChange()" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold px-3.5 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="2026-01">Januari 2026</option><option value="2026-02">Februari 2026</option><option value="2026-03">Maret 2026</option>
+                            <option value="2026-04">April 2026</option><option value="2026-05">Mei 2026</option><option value="2026-06">Juni 2026</option>
+                            <option value="2026-07">Juli 2026</option><option value="2026-08">Agustus 2026</option><option value="2026-09">September 2026</option>
+                            <option value="2026-10">Oktober 2026</option><option value="2026-11" selected>November 2026</option><option value="2026-12">Desember 2026</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="search-mhs" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Cari Nama Mahasiswa</label>
+                        <input type="text" id="search-mhs" oninput="renderInfoTab()" placeholder="Ketik nama mahasiswa..." class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+                <div class="bg-white rounded-2xl border border-rose-200 shadow-sm overflow-hidden">
+                    <div class="px-5 py-4 bg-rose-50/90 border-b border-rose-100 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                            <h3 class="text-sm font-bold text-rose-950">Belum Bayar</h3>
+                        </div>
+                        <span id="badge-count-belum" class="text-xs font-extrabold px-3 py-1 rounded-full bg-rose-100 text-rose-700">0 Orang</span>
+                    </div>
+                    <div id="list-belum-bayar" class="divide-y divide-slate-100 max-h-[460px] overflow-y-auto"></div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-emerald-200 shadow-sm overflow-hidden">
+                    <div class="px-5 py-4 bg-emerald-50/90 border-b border-emerald-100 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            <h3 class="text-sm font-bold text-emerald-950">Sudah Lunas</h3>
+                        </div>
+                        <span id="badge-count-lunas" class="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-100 text-emerald-700">0 Orang</span>
+                    </div>
+                    <div id="list-sudah-lunas" class="divide-y divide-slate-100 max-h-[460px] overflow-y-auto"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: MASUK & KELUAR -->
+        <section id="view-mutasi" class="hidden space-y-5">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-900">Transparansi Masuk & Keluar</h2>
+                        <p class="text-xs sm:text-sm text-slate-500 mt-0.5">Riwayat pemasukan iuran dan pengeluaran kas kelas</p>
+                    </div>
+                    <div class="inline-flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
+                        <button onclick="setMutasiFilter('ALL')" id="tab-mutasi-all" class="px-3.5 py-2 rounded-lg bg-white text-slate-900 shadow-sm">Semua</button>
+                        <button onclick="setMutasiFilter('MASUK')" id="tab-mutasi-masuk" class="px-3.5 py-2 rounded-lg text-slate-500">Pemasukan</button>
+                        <button onclick="setMutasiFilter('KELUAR')" id="tab-mutasi-keluar" class="px-3.5 py-2 rounded-lg text-slate-500">Pengeluaran</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="bg-emerald-50/70 border border-emerald-100 rounded-xl p-4">
+                        <p class="text-[11px] font-bold uppercase text-emerald-700">Total Pemasukan</p>
+                        <p id="mutasi-total-masuk" class="text-lg font-extrabold text-emerald-900 mt-0.5">Rp 0</p>
+                    </div>
+                    <div class="bg-rose-50/70 border border-rose-100 rounded-xl p-4">
+                        <p class="text-[11px] font-bold uppercase text-rose-700">Total Pengeluaran</p>
+                        <p id="mutasi-total-keluar" class="text-lg font-extrabold text-rose-900 mt-0.5">Rp 0</p>
+                    </div>
+                    <div class="bg-brand-50/70 border border-brand-100 rounded-xl p-4">
+                        <p class="text-[11px] font-bold uppercase text-brand-700">Sisa Saldo Bersih</p>
+                        <p id="mutasi-saldo-bersih" class="text-lg font-extrabold text-brand-950 mt-0.5">Rp 0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-5 py-3.5 bg-slate-50 border-b flex justify-between items-center text-xs font-bold text-slate-600">
+                    <span>Riwayat Transaksi</span>
+                    <span id="mutasi-count-label">0 Transaksi</span>
+                </div>
+                <div id="list-mutasi" class="divide-y divide-slate-100 max-h-[520px] overflow-y-auto"></div>
+            </div>
+        </section>
+
+        <!-- TAB 3: BENDAHARA -->
+        <section id="view-bendahara" class="hidden space-y-5">
+            <div id="bendahara-locked-view" class="max-w-md mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mt-4">
+                <div class="p-6 bg-slate-900 text-white text-center space-y-2">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-2">
+                        <i data-lucide="shield-check" class="w-6 h-6"></i>
+                    </div>
+                    <h2 class="text-lg font-bold">Area Khusus Bendahara</h2>
+                    <p class="text-xs text-slate-300">Masukkan PIN untuk mengaktifkan kontrol pencatatan & ceklis.</p>
+                </div>
+                <form onsubmit="handleBendaharaLogin(event)" class="p-6 space-y-4">
+                    <input type="password" id="input-pin-bendahara" inputmode="numeric" maxlength="12" required placeholder="••••••" class="w-full px-4 py-3.5 text-center font-mono text-xl tracking-[0.4em] bg-slate-50 border border-slate-200 rounded-xl">
+                    <button type="submit" class="w-full py-3 bg-slate-900 text-white text-sm font-bold rounded-xl">Buka Kontrol Bendahara</button>
+                </form>
+            </div>
+
+            <div id="bendahara-unlocked-view" class="hidden space-y-5">
+                <div class="bg-amber-500 text-slate-950 rounded-2xl p-4 flex justify-between items-center">
+                    <div>
+                        <h2 class="font-extrabold text-sm">Mode Bendahara Aktif</h2>
+                        <p class="text-xs">Perubahan langsung tersimpan otomatis di perangkat.</p>
+                    </div>
+                    <button onclick="logoutBendahara()" class="bg-slate-900 text-white text-xs font-bold px-3.5 py-2 rounded-xl">Kunci Kembali</button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="bg-white rounded-2xl border p-5 space-y-4">
+                        <h3 class="text-sm font-bold">Catat Pengeluaran Kas</h3>
+                        <form onsubmit="handleExpenseSubmit(event)" class="space-y-3">
+                            <input type="text" id="keluar-keterangan" required placeholder="Keterangan (contoh: Beli Spidol)" class="w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl">
+                            <input type="number" id="keluar-nominal" required min="500" step="500" placeholder="Nominal (contoh: 15000)" class="w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl">
+                            <button type="submit" class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold rounded-xl">Simpan Pengeluaran</button>
+                        </form>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border p-5 space-y-4">
+                        <h3 class="text-sm font-bold">Tambah Mahasiswa Baru</h3>
+                        <form onsubmit="handleAddMahasiswa(event)" class="space-y-3">
+                            <input type="text" id="new-mhs-nama" required placeholder="Nama Lengkap Mahasiswa" class="w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl">
+                            <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl">Tambahkan ke Daftar</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border overflow-hidden">
+                    <div class="p-5 border-b flex justify-between items-center">
+                        <h3 id="bendahara-checklist-title" class="text-sm font-bold">Ceklis Cepat Kas</h3>
+                        <input type="text" id="search-bendahara-mhs" oninput="renderBendaharaChecklist()" placeholder="Cari nama..." class="px-3 py-1.5 text-xs bg-slate-50 border rounded-xl w-48">
+                    </div>
+                    <div id="list-bendahara-checklist" class="divide-y divide-slate-100 max-h-[450px] overflow-y-auto"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: BACKUP & AMAN -->
+        <section id="view-backup" class="hidden space-y-5">
+            <div class="bg-white rounded-2xl border p-5 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div>
+                    <h2 class="text-lg font-bold">Pusat Backup & Kirim Data ke Teman</h2>
+                    <p class="text-xs text-slate-500">Unduh file cadangan data untuk dibagikan ke HP teman Anda agar datanya sama.</p>
+                </div>
+                <button onclick="exportDataJson()" class="px-4 py-2.5 bg-brand-600 text-white text-xs font-bold rounded-xl whitespace-nowrap">Unduh File Backup (.JSON)</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 pb-safe">
+        <div class="max-w-xl mx-auto px-2 h-16 grid grid-cols-4 items-center">
+            <button onclick="switchTab('info')" id="nav-btn-info" class="flex flex-col items-center justify-center gap-1 py-1.5 text-brand-600">
+                <i data-lucide="wallet" class="w-5 h-5"></i><span class="text-[11px] font-bold">Info Kas</span>
+            </button>
+            <button onclick="switchTab('mutasi')" id="nav-btn-mutasi" class="flex flex-col items-center justify-center gap-1 py-1.5 text-slate-500">
+                <i data-lucide="arrow-left-right" class="w-5 h-5"></i><span class="text-[11px] font-semibold">Masuk & Keluar</span>
+            </button>
+            <button onclick="switchTab('bendahara')" id="nav-btn-bendahara" class="flex flex-col items-center justify-center gap-1 py-1.5 text-slate-500 relative">
+                <i data-lucide="shield-check" class="w-5 h-5"></i><span class="text-[11px] font-semibold">Bendahara</span>
+            </button>
+            <button onclick="switchTab('backup')" id="nav-btn-backup" class="flex flex-col items-center justify-center gap-1 py-1.5 text-slate-500">
+                <i data-lucide="database-backup" class="w-5 h-5"></i><span class="text-[11px] font-semibold">Backup</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Script Aplikasi -->
+    <script>
+        const IURAN_PER_BULAN = 5000;
+        const NAMA_BULAN = {
+            '2026-01': 'Januari 2026', '2026-02': 'Februari 2026', '2026-03': 'Maret 2026',
+            '2026-04': 'April 2026', '2026-05': 'Mei 2026', '2026-06': 'Juni 2026',
+            '2026-07': 'Juli 2026', '2026-08': 'Agustus 2026', '2026-09': 'September 2026',
+            '2026-10': 'Oktober 2026', '2026-11': 'November 2026', '2026-12': 'Desember 2026'
+        };
+
+        const DEFAULT_STUDENTS = [
+            "Fikri", "Buby", "Ikhwan", "Afi", "Zaki", "Mufid", "Ahmad", "Alifa",
+            "Alya", "Anita", "Arina", "Aulia", "Dania", "Diva", "Evan", "Fajar",
+            "Faiq", "Husnul", "Mia", "Iis", "Jaza", "Nisa", "Kiki", "Akbar",
+            "Fila", "Nadia", "Naila", "Saiful", "Samsul", "Wafik", "Nida"
+        ];
+
+        function buildInitialState() {
+            return {
+                pinBendahara: '123456',
+                mahasiswa: DEFAULT_STUDENTS.map((nama, idx) => ({
+                    id: 'm_' + String(idx + 1).padStart(2, '0'),
+                    nama: nama,
+                    pembayaran: {}
+                })),
+                transaksi: []
+            };
+        }
+
+        let appState = buildInitialState();
+        let isBendahara = false;
+        let currentTab = 'info';
+        let mutasiFilter = 'ALL';
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('kas_pai_25a1_data');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    appState.pinBendahara = parsed.pinBendahara || '123456';
+                    appState.mahasiswa = parsed.mahasiswa || appState.mahasiswa;
+                    appState.transaksi = parsed.transaksi || [];
+                } catch (e) {
+                    console.error("Gagal memuat memori lokal:", e);
+                }
+            }
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('kas_pai_25a1_data', JSON.stringify(appState));
+            renderAll();
+        }
+
+        function formatRupiah(angka) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+        }
+
+        function getTodayFormatted() {
+            return new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        function refreshIcons() {
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `${type === 'error' ? 'bg-rose-600' : 'bg-emerald-600'} text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 text-xs font-bold transition-all`;
+            toast.innerHTML = `<span class="flex-1">${message}</span>`;
+            container.appendChild(toast);
+            refreshIcons();
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        window.switchTab = function(tabName) {
+            currentTab = tabName;
+            ['info', 'mutasi', 'bendahara', 'backup'].forEach(t => {
+                const viewEl = document.getElementById(`view-${t}`);
+                if (t === tabName) {
+                    viewEl.classList.remove('hidden');
+                } else {
+                    viewEl.classList.add('hidden');
+                }
+            });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            renderAll();
+        };
+
+        window.handleMonthChange = function() { renderAll(); };
+
+        function updateRoleUI() {
+            const roleBadge = document.getElementById('role-badge');
+            const lockedView = document.getElementById('bendahara-locked-view');
+            const unlockedView = document.getElementById('bendahara-unlocked-view');
+            const quickBtnText = document.getElementById('quick-bendahara-text');
+
+            if (isBendahara) {
+                roleBadge.textContent = 'Bendahara';
+                roleBadge.className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 shrink-0';
+                lockedView.classList.add('hidden');
+                unlockedView.classList.remove('hidden');
+                quickBtnText.textContent = 'Keluar Bendahara';
+            } else {
+                roleBadge.textContent = 'Mahasiswa';
+                roleBadge.className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0';
+                lockedView.classList.remove('hidden');
+                unlockedView.classList.add('hidden');
+                quickBtnText.textContent = 'Mode Bendahara';
+            }
+        }
+
+        window.quickToggleBendaharaPrompt = function() {
+            if (isBendahara) {
+                logoutBendahara();
+            } else {
+                switchTab('bendahara');
+            }
+        };
+
+        window.handleBendaharaLogin = function(e) {
+            e.preventDefault();
+            const inputPin = document.getElementById('input-pin-bendahara').value.trim();
+            if (inputPin === appState.pinBendahara) {
+                isBendahara = true;
+                document.getElementById('input-pin-bendahara').value = '';
+                updateRoleUI();
+                renderAll();
+                showToast('Berhasil masuk sebagai Bendahara.');
+            } else {
+                document.getElementById('input-pin-bendahara').value = '';
+                showToast('PIN Bendahara salah.', 'error');
+            }
+        };
+
+        window.logoutBendahara = function() {
+            isBendahara = false;
+            updateRoleUI();
+            renderAll();
+            showToast('Mode Bendahara dikunci kembali.');
+        };
+
+        function renderAll() {
+            updateRoleUI();
+            renderInfoTab();
+            renderMutasiTab();
+            renderBendaharaChecklist();
+            refreshIcons();
+        }
+
+        window.renderInfoTab = function() {
+            const selectedBulan = document.getElementById('select-bulan').value;
+            const searchQuery = document.getElementById('search-mhs').value.toLowerCase();
+
+            const totalMasuk = appState.transaksi.filter(t => t.tipe === 'MASUK').reduce((s, t) => s + t.nominal, 0);
+            const totalKeluar = appState.transaksi.filter(t => t.tipe === 'KELUAR').reduce((s, t) => s + t.nominal, 0);
+            const saldoKas = totalMasuk - totalKeluar;
+
+            const totalMhs = appState.mahasiswa.length;
+            const lunasTotalBulanIni = appState.mahasiswa.filter(m => (m.pembayaran && m.pembayaran[selectedBulan] === 'LUNAS')).length;
+            const terkumpulBulanIni = lunasTotalBulanIni * IURAN_PER_BULAN;
+            const persen = totalMhs > 0 ? Math.round((lunasTotalBulanIni / totalMhs) * 100) : 0;
+
+            document.getElementById('stat-saldo').textContent = formatRupiah(saldoKas);
+            document.getElementById('stat-bulan-ini').textContent = formatRupiah(terkumpulBulanIni);
+            document.getElementById('stat-progress-bar').style.width = `${persen}%`;
+            document.getElementById('stat-persen').textContent = `${persen}% (${lunasTotalBulanIni}/${totalMhs})`;
+
+            const filtered = appState.mahasiswa.filter(m => m.nama.toLowerCase().includes(searchQuery));
+            const belumList = filtered.filter(m => !(m.pembayaran && m.pembayaran[selectedBulan] === 'LUNAS'));
+            const lunasList = filtered.filter(m => (m.pembayaran && m.pembayaran[selectedBulan] === 'LUNAS'));
+
+            document.getElementById('badge-count-belum').textContent = `${belumList.length} Orang`;
+            document.getElementById('badge-count-lunas').textContent = `${lunasList.length} Orang`;
+
+            document.getElementById('list-belum-bayar').innerHTML = belumList.length === 0 ? 
+                `<div class="py-8 text-center text-xs text-slate-400">Semua sudah lunas!</div>` :
+                belumList.map((m, idx) => `
+                    <div class="px-4 py-3 flex items-center justify-between">
+                        <span class="font-semibold text-xs text-slate-800">${idx + 1}. ${m.nama}</span>
+                        ${isBendahara ? `<button onclick="toggleStudentStatus('${m.id}', true)" class="bg-emerald-50 text-emerald-700 text-[11px] font-bold px-2.5 py-1 rounded-lg">Ceklis Lunas</button>` : `<span class="text-[11px] text-rose-600 font-bold">Belum</span>`}
+                    </div>
+                `).join('');
+
+            document.getElementById('list-sudah-lunas').innerHTML = lunasList.length === 0 ? 
+                `<div class="py-8 text-center text-xs text-slate-400">Belum ada yang lunas</div>` :
+                lunasList.map((m, idx) => `
+                    <div class="px-4 py-3 flex items-center justify-between">
+                        <span class="font-semibold text-xs text-slate-800">${idx + 1}. ${m.nama}</span>
+                        ${isBendahara ? `<button onclick="toggleStudentStatus('${m.id}', false)" class="text-rose-600 text-[11px] font-bold px-2 py-1">Batal</button>` : `<span class="text-[11px] text-emerald-600 font-bold">Lunas</span>`}
+                    </div>
+                `).join('');
+            refreshIcons();
+        };
+
+        window.setMutasiFilter = function(filter) {
+            mutasiFilter = filter;
+            renderMutasiTab();
+        };
+
+        function renderMutasiTab() {
+            const totalMasuk = appState.transaksi.filter(t => t.tipe === 'MASUK').reduce((s, t) => s + t.nominal, 0);
+            const totalKeluar = appState.transaksi.filter(t => t.tipe === 'KELUAR').reduce((s, t) => s + t.nominal, 0);
+
+            document.getElementById('mutasi-total-masuk').textContent = formatRupiah(totalMasuk);
+            document.getElementById('mutasi-total-keluar').textContent = formatRupiah(totalKeluar);
+            document.getElementById('mutasi-saldo-bersih').textContent = formatRupiah(totalMasuk - totalKeluar);
+
+            let list = [...appState.transaksi].reverse();
+            if (mutasiFilter === 'MASUK') list = list.filter(t => t.tipe === 'MASUK');
+            if (mutasiFilter === 'KELUAR') list = list.filter(t => t.tipe === 'KELUAR');
+
+            document.getElementById('mutasi-count-label').textContent = `${list.length} Transaksi`;
+            document.getElementById('list-mutasi').innerHTML = list.length === 0 ? 
+                `<div class="py-10 text-center text-xs text-slate-400">Belum ada transaksi tercatat.</div>` :
+                list.map(t => `
+                    <div class="px-5 py-3 flex justify-between items-center text-xs">
+                        <div>
+                            <p class="font-bold text-slate-800">${t.keterangan}</p>
+                            <p class="text-[10px] text-slate-400">${t.tanggal}</p>
+                        </div>
+                        <span class="font-bold ${t.tipe === 'MASUK' ? 'text-emerald-600' : 'text-rose-600'}">${t.tipe === 'MASUK' ? '+' : '-'} ${formatRupiah(t.nominal)}</span>
+                    </div>
+                `).join('');
+        }
+
+        window.renderBendaharaChecklist = function() {
+            const selectedBulan = document.getElementById('select-bulan').value;
+            const query = document.getElementById('search-bendahara-mhs').value.toLowerCase();
+            const list = appState.mahasiswa.filter(m => m.nama.toLowerCase().includes(query));
+
+            document.getElementById('list-bendahara-checklist').innerHTML = list.map((m, idx) => {
+                const isLunas = m.pembayaran && m.pembayaran[selectedBulan] === 'LUNAS';
+                return `
+                    <div class="px-5 py-3 flex justify-between items-center text-xs">
+                        <span class="font-bold text-slate-800">${idx + 1}. ${m.nama}</span>
+                        <button onclick="toggleStudentStatus('${m.id}', ${!isLunas})" class="px-3 py-1.5 rounded-xl font-bold ${isLunas ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'}">
+                            ${isLunas ? 'Lunas' : 'Ceklis Lunas'}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        window.toggleStudentStatus = function(mhsId, setLunas) {
+            if (!isBendahara) return;
+            const selectedBulan = document.getElementById('select-bulan').value;
+            const mhs = appState.mahasiswa.find(m => m.id === mhsId);
+            if (!mhs) return;
+
+            if (!mhs.pembayaran) mhs.pembayaran = {};
+
+            if (setLunas) {
+                mhs.pembayaran[selectedBulan] = 'LUNAS';
+                appState.transaksi.push({
+                    id: 't_' + Date.now(),
+                    tipe: 'MASUK',
+                    keterangan: `Kas ${NAMA_BULAN[selectedBulan]} - ${mhs.nama}`,
+                    nominal: IURAN_PER_BULAN,
+                    tanggal: getTodayFormatted()
+                });
+                showToast(`${mhs.nama} dicatat Lunas.`);
+            } else {
+                delete mhs.pembayaran[selectedBulan];
+                const targetKet = `Kas ${NAMA_BULAN[selectedBulan]} - ${mhs.nama}`;
+                appState.transaksi = appState.transaksi.filter(t => !(t.tipe === 'MASUK' && t.keterangan === targetKet));
+                showToast(`Status ${mhs.nama} dibatalkan.`);
+            }
+            saveToLocalStorage();
+        };
+
+        window.handleExpenseSubmit = function(e) {
+            e.preventDefault();
+            if (!isBendahara) return;
+            const ket = document.getElementById('keluar-keterangan').value.trim();
+            const nominal = parseInt(document.getElementById('keluar-nominal').value, 10);
+
+            appState.transaksi.push({
+                id: 't_' + Date.now(),
+                tipe: 'KELUAR',
+                keterangan: ket,
+                nominal: nominal,
+                tanggal: getTodayFormatted()
+            });
+
+            document.getElementById('keluar-keterangan').value = '';
+            document.getElementById('keluar-nominal').value = '';
+            saveToLocalStorage();
+            showToast('Pengeluaran berhasil dicatat.');
+        };
+
+        window.handleAddMahasiswa = function(e) {
+            e.preventDefault();
+            if (!isBendahara) return;
+            const nama = document.getElementById('new-mhs-nama').value.trim();
+            if (!nama) return;
+
+            appState.mahasiswa.push({ id: 'm_' + Date.now(), nama: nama, pembayaran: {} });
+            document.getElementById('new-mhs-nama').value = '';
+            saveToLocalStorage();
+            showToast(`${nama} ditambahkan.`);
+        };
+
+        window.exportDataJson = function() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", "Backup_Kas_PAI_25A1.json");
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+            showToast('File backup berhasil diunduh.');
+        };
+
+        window.onload = function() {
+            loadFromLocalStorage();
+            refreshIcons();
+            renderAll();
+        };
+    </script>
+</body>
+</html>
